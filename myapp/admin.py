@@ -11,3 +11,7 @@ class ProductAdmin(admin.ModelAdmin):
 @admin.register(Category)
 class CategoryAdmin(admin.ModelAdmin):
     list_display = ('title', 'created_at')
+
+@admin.register(ProductImage)
+class ProductImageAdmin(admin.ModelAdmin):
+    list_display = ('product', 'image')

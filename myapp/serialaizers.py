@@ -1,15 +1,22 @@
 from rest_framework import serializers
-from myapp.models import Category, Product
-
+from .models import Category, Product, ProductImage
 
 class CategorySerializer(serializers.ModelSerializer):
     class Meta:
         model = Category
         fields = "__all__"
 
+class ProductImageSerializer(serializers.ModelSerializer):
+    product = serializers.CharField(source='product.name' , read_only=True)
+
+    class Meta:
+        model = ProductImage
+        fields = "__all__"
 
 class ProductSerializer(serializers.ModelSerializer):
-    category = serializers.CharField(source="category.title", read_only=True)
+    images = ProductImageSerializer(many=True, read_only=True)
+    category = serializers.CharField(source='category.title', read_only=True)
+    discounted_price = serializers.ReadOnlyField()
 
     class Meta:
         model = Product
