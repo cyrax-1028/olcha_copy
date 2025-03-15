@@ -9,7 +9,6 @@ class CategoryListView(ListCreateAPIView):
 class CategoryDetailView(RetrieveUpdateDestroyAPIView):
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
-    lookup_field = "id"
 
 class ProductListView(ListCreateAPIView):
     queryset = Product.objects.all()
@@ -18,7 +17,6 @@ class ProductListView(ListCreateAPIView):
 class ProductDetailView(RetrieveUpdateDestroyAPIView):
     queryset = Product.objects.all()
     serializer_class = ProductSerializer
-    lookup_field = "id"
 
 class ImagesListView(ListCreateAPIView):
     queryset = ProductImage.objects.all()
@@ -27,4 +25,3 @@ class ImagesListView(ListCreateAPIView):
 class ImageDetailView(RetrieveUpdateDestroyAPIView):
     queryset = ProductImage.objects.all()
     serializer_class = ProductImageSerializer
-    lookup_field = "id"
