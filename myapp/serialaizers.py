@@ -7,11 +7,13 @@ class CategorySerializer(serializers.ModelSerializer):
         fields = "__all__"
 
 class ProductImageSerializer(serializers.ModelSerializer):
-    product = serializers.CharField(source='product.name' , read_only=True)
+    product = serializers.PrimaryKeyRelatedField(queryset=Product.objects.all())
+    product_name = serializers.CharField(source='product.name', read_only=True)
 
     class Meta:
         model = ProductImage
         fields = "__all__"
+
 
 class ProductSerializer(serializers.ModelSerializer):
     images = ProductImageSerializer(many=True, read_only=True)
