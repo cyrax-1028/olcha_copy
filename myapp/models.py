@@ -23,7 +23,7 @@ class Category(BaseModel):
         verbose_name_plural = "categories"
 
 
-class Product(models.Model):
+class Product(BaseModel):
     name = models.CharField(max_length=255, unique=True)
     category = models.ForeignKey("Category", on_delete=models.SET_NULL, related_name="products", null=True, blank=True)
     description = models.TextField(null=True, blank=True)

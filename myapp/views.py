@@ -1,4 +1,6 @@
 from rest_framework.generics import ListCreateAPIView, RetrieveUpdateDestroyAPIView
+from myapp.permissions import DeleteProductPermission, IsWeekdayPermission
+
 from .models import Category, Product, ProductImage, Comment
 from .serialaizers import CategorySerializer, ProductListSerializer, ProductDetailSerializer, ProductImageSerializer, CommentSerializer
 
@@ -17,6 +19,7 @@ class ProductListView(ListCreateAPIView):
 class ProductDetailView(RetrieveUpdateDestroyAPIView):
     queryset = Product.objects.all()
     serializer_class = ProductDetailSerializer
+    permission_classes = (DeleteProductPermission,)
 
 class ImagesListView(ListCreateAPIView):
     queryset = ProductImage.objects.all()
@@ -29,3 +32,4 @@ class ImageDetailView(RetrieveUpdateDestroyAPIView):
 class CommentListView(ListCreateAPIView):
     queryset = Comment.objects.all()
     serializer_class = CommentSerializer
+    permission_classes = (IsWeekdayPermission,)
