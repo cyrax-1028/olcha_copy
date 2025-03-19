@@ -14,3 +14,4 @@ class IsWeekdayPermission(BasePermission):
     def has_permission(self, request, view):
         today = now().weekday()
         return today in range(5)
+
