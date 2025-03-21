@@ -16,24 +16,24 @@ class ProductImageSerializer(serializers.ModelSerializer):
 
 
 class ProductListSerializer(serializers.ModelSerializer):
-    discounted_price = serializers.ReadOnlyField()
-    get_rating = serializers.ReadOnlyField()
-    is_liked = serializers.SerializerMethodField()
-
-    def get_is_liked(self, obj):
-        user = self.context.get("request").user
-        if not user.is_authenticated:
-            return False
-
-        if user not in obj.like.all():
-            return False
-
-        return True
+    # discounted_price = serializers.ReadOnlyField()
+    # get_rating = serializers.ReadOnlyField()
+    # is_liked = serializers.SerializerMethodField()
+    #
+    # def get_is_liked(self, obj):
+    #     user = self.context.get("request").user
+    #     if not user.is_authenticated:
+    #         return False
+    #
+    #     if user not in obj.like.all():
+    #         return False
+    #
+    #     return True
 
 
     class Meta:
         model = Product
-        fields = "__all__"
+        exclude = ("created_at", "updated_at", "description", "like")
 
 
 class ProductDetailSerializer(serializers.ModelSerializer):
@@ -55,7 +55,7 @@ class ProductDetailSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Product
-        fields = "__all__"
+        exclude = ("created_at", "updated_at", "description", "like")
 
 
 class CommentSerializer(serializers.ModelSerializer):

@@ -14,7 +14,6 @@ from django.contrib.auth import authenticate
 from rest_framework_simplejwt.tokens import RefreshToken
 
 
-
 class CategoryListView(ListCreateAPIView):
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
@@ -26,15 +25,18 @@ class CategoryDetailView(RetrieveUpdateDestroyAPIView):
 
 
 class ProductListView(ListCreateAPIView):
-    queryset = Product.objects.all()
+    queryset = Product.objects.select_related("category").prefetch_related("like").only(
+        "id", "name", "price", "quantity", "stock", "category__title"
+    )
     serializer_class = ProductListSerializer
     permission_classes = [IsAuthenticated]
+
     # authentication_classes = (TokenAuthentication,)
-    authentication_classes = [JWTAuthentication]
+    # authentication_classes = [JWTAuthentication]
 
 
 class ProductDetailView(RetrieveUpdateDestroyAPIView):
-    queryset = Product.objects.all()
+    queryset = Product.objects.select_related("category").prefetch_related("like").defer("description")
     serializer_class = ProductDetailSerializer
     permission_classes = (DeleteProductPermission,)
 
@@ -54,7 +56,7 @@ class CommentListView(ListCreateAPIView):
     serializer_class = CommentSerializer
     permission_classes = (IsWeekdayPermission,)
 
-#///////////////////////// T O K E N - A U T H ////////////////////////////////
+# ///////////////////////// T O K E N - A U T H ////////////////////////////////
 
 # class LoginView(APIView):
 #     def post(self, request):
@@ -77,32 +79,32 @@ class CommentListView(ListCreateAPIView):
 #         return Response({"detail": "Tizimdan chiqildi"}, status=200)
 
 
-#///////////////////////// J W T ////////////////////////////////
+# ///////////////////////// J W T ////////////////////////////////
 
-class LoginView(APIView):
-    def post(self, request):
-        username = request.data.get("username")
-        password = request.data.get("password")
-
-        user = authenticate(username=username, password=password)
-
-        if user:
-            refresh = RefreshToken.for_user(user)
-            return Response({
-                "access": str(refresh.access_token),
-                "refresh": str(refresh)
-            })
-        return Response({"error": "Noto‘g‘ri username yoki parol"}, status=400)
-
-
-class LogoutView(APIView):
-    permission_classes = [IsAuthenticated]
-
-    def post(self, request):
-        try:
-            refresh_token = request.data["refresh"]
-            token = RefreshToken(refresh_token)
-            token.blacklist()
-            return Response({"detail": "Tizimdan chiqildi"}, status=200)
-        except Exception as e:
-            return Response({"error": "Noto‘g‘ri token"}, status=400)
+# class LoginView(APIView):
+#     def post(self, request):
+#         username = request.data.get("username")
+#         password = request.data.get("password")
+#
+#         user = authenticate(username=username, password=password)
+#
+#         if user:
+#             refresh = RefreshToken.for_user(user)
+#             return Response({
+#                 "access": str(refresh.access_token),
+#                 "refresh": str(refresh)
+#             })
+#         return Response({"error": "Noto‘g‘ri username yoki parol"}, status=400)
+#
+#
+# class LogoutView(APIView):
+#     permission_classes = [IsAuthenticated]
+#
+#     def post(self, request):
+#         try:
+#             refresh_token = request.data["refresh"]
+#             token = RefreshToken(refresh_token)
+#             token.blacklist()
+#             return Response({"detail": "Tizimdan chiqildi"}, status=200)
+#         except Exception as e:
+#             return Response({"error": "Noto‘g‘ri token"}, status=400)
