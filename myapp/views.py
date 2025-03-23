@@ -3,6 +3,8 @@ from rest_framework.generics import ListCreateAPIView, RetrieveUpdateDestroyAPIV
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework_simplejwt.authentication import JWTAuthentication
+from django.utils.decorators import method_decorator
+from django.views.decorators.cache import cache_page
 
 from myapp.permissions import DeleteProductPermission, IsWeekdayPermission
 from .models import Category, Product, ProductImage, Comment
@@ -31,8 +33,13 @@ class ProductListView(ListCreateAPIView):
     serializer_class = ProductListSerializer
     permission_classes = [IsAuthenticated]
 
-    # authentication_classes = (TokenAuthentication,)
-    # authentication_classes = [JWTAuthentication]
+    @method_decorator(cache_page(60))
+    def get(self, request, *args, **kwargs):
+        return super().get(request, *args, **kwargs)
+
+
+# authentication_classes = (TokenAuthentication,)
+# authentication_classes = [JWTAuthentication]
 
 
 class ProductDetailView(RetrieveUpdateDestroyAPIView):

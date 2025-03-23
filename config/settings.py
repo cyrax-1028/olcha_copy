@@ -141,11 +141,16 @@ REST_FRAMEWORK = {
     'PAGE_SIZE': 3,
 }
 
-
 INTERNAL_IPS = [
     "127.0.0.1",
 ]
 
+CACHES = {
+    "default": {
+        "BACKEND": "django.core.cache.backends.filebased.FileBasedCache",
+        "LOCATION": "C:/Users/user/PycharmProjects/DjangoProject/caches/",
+    }
+}
 
 # from datetime import timedelta
 #
