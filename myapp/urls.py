@@ -1,16 +1,22 @@
-from django.urls import path
+from django.urls import path, include
+from rest_framework.routers import DefaultRouter
 from myapp import views
 from rest_framework_simplejwt.views import TokenRefreshView
 
+router = DefaultRouter()
+router.register("categories", views.CategoryViewSet, basename="category")
+router.register("groups", views.GroupViewSet, basename="group")
+router.register("products", views.ProductViewSet, basename="product")
+router.register(r"orders", views.OrderViewSet, basename="order")
+
 urlpatterns = [
-    path('categories/', views.CategoryListView.as_view(), name='category-list'),
-    path('categories/<int:pk>/', views.CategoryDetailView.as_view(), name='category-detail'),
-    path('', views.ProductListView.as_view(), name='product-list'),
-    path('product/<int:pk>/', views.ProductDetailView.as_view(), name='product-detail'),
-    path('product-images/', views.ImagesListView.as_view(), name='product-image-list'),
-    path('product-images/<int:pk>/', views.ImageDetailView.as_view(), name='product-image-detail'),
-    path('comments/', views.CommentListView.as_view(), name='comment-list'),
-    # path('login/', views.LoginView.as_view(), name='login'),
-    # path('logout/', views.LogoutView.as_view(), name='logout'),
-    # path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
+    path("comments/", views.CommentListView.as_view()),
+    path("comment-by-product/<int:product_id>", views.CommentByProductView.as_view()),
+    path("register/", views.RegisterView.as_view(), name="register"),
+    path('login/', views.LoginView.as_view(), name='login'),
+    path('logout/', views.LogoutView.as_view(), name='logout'),
+    path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
+]
+urlpatterns += [
+    path("", include(router.urls)),
 ]

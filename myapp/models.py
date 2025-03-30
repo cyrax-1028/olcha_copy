@@ -2,6 +2,9 @@ from django.contrib.auth.models import User
 from django.db import models
 from decimal import Decimal
 from django.db.models import Avg
+from django.utils.timezone import now
+from phonenumber_field.modelfields import PhoneNumberField
+from django.core.exceptions import ValidationError
 
 
 class BaseModel(models.Model):
@@ -23,9 +26,22 @@ class Category(BaseModel):
         verbose_name_plural = "categories"
 
 
+class Group(BaseModel):
+    title = models.CharField(max_length=100, unique=True)
+    category = models.ForeignKey(Category, on_delete=models.CASCADE, related_name='groups')
+
+    def __str__(self):
+        return self.title
+
+    class Meta:
+        verbose_name = 'group'
+        verbose_name_plural = "groups"
+
+
 class Product(BaseModel):
     name = models.CharField(max_length=255, unique=True)
-    category = models.ForeignKey("Category", on_delete=models.SET_NULL, related_name="products", null=True, blank=True)
+    group = models.ForeignKey(Group, on_delete=models.CASCADE, related_name='products')
+    category = models.ForeignKey("Category", on_delete=models.CASCADE, related_name="products")
     description = models.TextField(null=True, blank=True)
     price = models.DecimalField(max_digits=14, decimal_places=2)
     discount = models.PositiveIntegerField(default=0)
@@ -44,11 +60,13 @@ class Product(BaseModel):
         avg_rating = self.comments.aggregate(average=Avg("rating"))["average"]
         return round(avg_rating) if avg_rating is not None else 1
 
+    @property
+    def is_new(self):
+        return (now() - self.created_at).total_seconds() < 86400
 
     def save(self, *args, **kwargs):
         self.stock = "Available" if self.quantity > 0 else "Sold Out"
         super().save(*args, **kwargs)
-
 
     def __str__(self):
         return self.name
@@ -61,9 +79,31 @@ class Product(BaseModel):
 class ProductImage(models.Model):
     product = models.ForeignKey("Product", on_delete=models.CASCADE, related_name="images")
     image = models.ImageField(upload_to='product_images/')
+    is_prime = models.BooleanField(default=False)
 
     def __str__(self):
         return self.product.name
+
+
+class Attribute(models.Model):
+    name = models.CharField(max_length=255)
+
+    def __str__(self):
+        return self.name
+
+
+class AttributeValue(models.Model):
+    value = models.CharField(max_length=255)
+
+    def __str__(self):
+        return self.value
+
+
+class ProductAttribute(models.Model):
+    product = models.ForeignKey(Product, on_delete=models.SET_NULL, related_name='product_attributes', null=True,
+                                blank=True)
+    attribute = models.ForeignKey(Attribute, on_delete=models.SET_NULL, null=True, blank=True)
+    attribute_value = models.ForeignKey(AttributeValue, on_delete=models.SET_NULL, null=True, blank=True)
 
 
 class Comment(BaseModel):
@@ -74,7 +114,7 @@ class Comment(BaseModel):
         FOUR = 4
         FIVE = 5
 
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="user_comments" )
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="user_comments")
     product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name="comments", null=True, blank=True)
     content = models.TextField()
     rating = models.PositiveIntegerField(choices=RatingChoice.choices, default=RatingChoice.ONE)
@@ -85,3 +125,25 @@ class Comment(BaseModel):
 
     class Meta:
         ordering = ["-created_at"]
+
+
+class Order(models.Model):
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name="orders")
+    full_name = models.CharField(max_length=255)
+    phone = PhoneNumberField(region='UZ')
+    quantity = models.PositiveIntegerField(default=1)
+    total_price = models.DecimalField(max_digits=10, decimal_places=2, default=0.00, editable=False)
+    status = models.CharField(
+        max_length=20,
+        choices=[('pending', 'Pending'), ('completed', 'Completed'), ('canceled', 'Canceled')],
+        default='pending'
+    )
+
+    def save(self, *args, **kwargs):
+        if self.product.quantity >= self.quantity:
+            self.total_price = self.product.price * self.quantity
+            self.product.quantity -= self.quantity
+            self.product.save(update_fields=["quantity"])
+            super().save(*args, **kwargs)
+        else:
+            print("Yetarli mahsulot mavjud emas!")
