@@ -163,7 +163,7 @@ INTERNAL_IPS = [
 CACHES = {
     "default": {
         "BACKEND": "django.core.cache.backends.filebased.FileBasedCache",
-        "LOCATION": "C:/Users/user/PycharmProjects/DjangoProject/caches/",
+        'LOCATION': '/absolute/path/to/cache'
     }
 }
 
