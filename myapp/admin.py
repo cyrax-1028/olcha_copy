@@ -7,11 +7,13 @@ from import_export import resources
 @admin.register(Category)
 class CategoryAdmin(admin.ModelAdmin):
     list_display = ('title', 'created_at')
+    prepopulated_fields = {'slug': ('title',)}
 
 
 @admin.register(Group)
 class GroupAdmin(admin.ModelAdmin):
     list_display = ('title', 'created_at')
+    prepopulated_fields = {'slug': ('title',)}
 
 
 class AttributeResource(resources.ModelResource):

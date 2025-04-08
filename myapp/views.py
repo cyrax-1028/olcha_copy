@@ -4,6 +4,8 @@ from django.utils.decorators import method_decorator
 from django.views.decorators.cache import cache_page
 from rest_framework import status
 from rest_framework import viewsets
+from rest_framework import viewsets, filters
+from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.generics import ListCreateAPIView, ListAPIView
 from rest_framework.permissions import IsAuthenticated, IsAuthenticatedOrReadOnly
 from rest_framework.response import Response
@@ -14,14 +16,22 @@ from .models import Category, Group, Product, ProductImage, Comment, ProductAttr
 from .serialaizers import (
     CategorySerializer, GroupSerializer, ProductSerializer, ProductDetailSerializer,
     ProductImageSerializer, CommentSerializer, CategoryDetailSerializer,
-    ProductCreateSerializer, OrderSerializer, GroupDetailSerializer, OrderDetailSerializer, RegisterSerializer
+    ProductCreateSerializer, OrderSerializer, GroupDetailSerializer, OrderDetailSerializer, #RegisterSerializer
 )
 from myapp.permissions import IsAdminOrReadOnly
+from rest_framework.pagination import PageNumberPagination
+
+
+class Pagination(PageNumberPagination):
+    page_size = 10
+    page_size_query_param = 'page_size'
+    max_page_size = 100
 
 
 class CategoryViewSet(viewsets.ModelViewSet):
     queryset = Category.objects.all()
-    permission_classes = (IsAdminOrReadOnly,)
+    # permission_classes = (IsAdminOrReadOnly,)
+    lookup_field = 'slug'
 
     def get_serializer_class(self):
         if self.action == "retrieve":
@@ -35,7 +45,8 @@ class CategoryViewSet(viewsets.ModelViewSet):
 
 class GroupViewSet(viewsets.ModelViewSet):
     queryset = Group.objects.select_related("category").all()
-    permission_classes = (IsAdminOrReadOnly,)
+    # permission_classes = (IsAdminOrReadOnly,)
+    lookup_field = 'slug'
 
     def get_serializer_class(self):
         if self.action == "retrieve":
@@ -52,7 +63,15 @@ class ProductViewSet(viewsets.ModelViewSet):
         Prefetch("images", queryset=ProductImage.objects.all()),
         Prefetch("product_attributes", queryset=ProductAttribute.objects.all())
     )
+    pagination_class = Pagination
     permission_classes = [IsAdminOrReadOnly]
+    filter_backends = [filters.SearchFilter, DjangoFilterBackend, filters.OrderingFilter]
+    search_fields = ['name']
+
+    filterset_fields = ['category', 'price']
+
+    ordering_fields = ['name', 'price']
+    ordering = ['name']
 
     def get_serializer_class(self):
         if self.action == "retrieve":
@@ -66,10 +85,11 @@ class ProductViewSet(viewsets.ModelViewSet):
         return super().list(request, *args, **kwargs)
 
 
-class CommentListView(ListCreateAPIView):
+class CommentViewSet(viewsets.ModelViewSet):
     queryset = Comment.objects.select_related("product", "user").all()
     serializer_class = CommentSerializer
-    permission_classes = [IsAuthenticatedOrReadOnly]
+
+    # permission_classes = [IsAuthenticatedOrReadOnly]
 
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
@@ -80,7 +100,7 @@ class CommentListView(ListCreateAPIView):
 
 
 class CommentByProductView(ListAPIView):
-    permission_classes = [IsAuthenticatedOrReadOnly]
+    # permission_classes = [IsAuthenticatedOrReadOnly]
     serializer_class = CommentSerializer
 
     def get_queryset(self):
@@ -91,8 +111,9 @@ class CommentByProductView(ListAPIView):
 class OrderViewSet(viewsets.ModelViewSet):
     queryset = Order.objects.all()
     serializer_class = OrderSerializer
-    authentication_classes = [JWTAuthentication]
-    permission_classes = [IsAuthenticated]
+
+    # authentication_classes = [JWTAuthentication]
+    # permission_classes = [IsAuthenticated]
 
     def get_serializer_class(self):
         if self.action == "retrieve":
@@ -115,43 +136,42 @@ class OrderViewSet(viewsets.ModelViewSet):
     def list(self, request, *args, **kwargs):
         return super().list(request, *args, **kwargs)
 
-
 # ///////////////////////// J W T ////////////////////////////////
 
-class RegisterView(APIView):
-
-    def post(self, request):
-        serializer = RegisterSerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response({"message": "Foydalanuvchi muvaffaqiyatli yaratildi!"}, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-
-class LoginView(APIView):
-    def post(self, request):
-        username = request.data.get("username")
-        password = request.data.get("password")
-
-        user = authenticate(username=username, password=password)
-
-        if user:
-            refresh = RefreshToken.for_user(user)
-            return Response({
-                "access": str(refresh.access_token),
-                "refresh": str(refresh)
-            })
-        return Response({"error": "Noto‘g‘ri username yoki parol"}, status=400)
-
-
-class LogoutView(APIView):
-    permission_classes = [IsAuthenticated]
-
-    def post(self, request):
-        try:
-            refresh_token = request.data["refresh"]
-            token = RefreshToken(refresh_token)
-            token.blacklist()
-            return Response({"detail": "Tizimdan chiqildi"}, status=200)
-        except Exception as e:
-            return Response({"error": "Noto‘g‘ri token"}, status=400)
+# class RegisterView(APIView):
+#
+#     def post(self, request):
+#         serializer = RegisterSerializer(data=request.data)
+#         if serializer.is_valid():
+#             serializer.save()
+#             return Response({"message": "Foydalanuvchi muvaffaqiyatli yaratildi!"}, status=status.HTTP_201_CREATED)
+#         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+#
+#
+# class LoginView(APIView):
+#     def post(self, request):
+#         username = request.data.get("username")
+#         password = request.data.get("password")
+#
+#         user = authenticate(username=username, password=password)
+#
+#         if user:
+#             refresh = RefreshToken.for_user(user)
+#             return Response({
+#                 "access": str(refresh.access_token),
+#                 "refresh": str(refresh)
+#             })
+#         return Response({"error": "Noto‘g‘ri username yoki parol"}, status=400)
+#
+#
+# class LogoutView(APIView):
+#     permission_classes = [IsAuthenticated]
+#
+#     def post(self, request):
+#         try:
+#             refresh_token = request.data["refresh"]
+#             token = RefreshToken(refresh_token)
+#             token.blacklist()
+#             return Response({"detail": "Tizimdan chiqildi"}, status=200)
+#         except Exception as e:
+#             return Response({"error": "Noto‘g‘ri token"}, status=400)

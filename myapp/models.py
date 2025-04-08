@@ -5,6 +5,7 @@ from django.db.models import Avg
 from django.utils.timezone import now
 from phonenumber_field.modelfields import PhoneNumberField
 from django.core.exceptions import ValidationError
+from django.template.defaultfilters import slugify
 
 
 class BaseModel(models.Model):
@@ -17,6 +18,13 @@ class BaseModel(models.Model):
 
 class Category(BaseModel):
     title = models.CharField(max_length=100, unique=True)
+    slug = models.SlugField(null=True, blank=True)
+
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            self.slug = slugify(self.title)
+
+        super(Category, self).save(*args, **kwargs)
 
     def __str__(self):
         return self.title
@@ -28,7 +36,14 @@ class Category(BaseModel):
 
 class Group(BaseModel):
     title = models.CharField(max_length=100, unique=True)
+    slug = models.SlugField(null=True, blank=True)
     category = models.ForeignKey(Category, on_delete=models.CASCADE, related_name='groups')
+
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            self.slug = slugify(self.title)
+
+        super(Group, self).save(*args, **kwargs)
 
     def __str__(self):
         return self.title
@@ -39,7 +54,7 @@ class Group(BaseModel):
 
 
 class Product(BaseModel):
-    name = models.CharField(max_length=255, unique=True)
+    name = models.CharField(max_length=255)
     group = models.ForeignKey(Group, on_delete=models.CASCADE, related_name='products')
     category = models.ForeignKey("Category", on_delete=models.CASCADE, related_name="products")
     description = models.TextField(null=True, blank=True)

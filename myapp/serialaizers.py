@@ -103,12 +103,12 @@ class GroupSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Group
-        fields = ["id", "title","category", "detail_url"]
+        fields = ["id", "title", "category", "detail_url"]
 
     def get_detail_url(self, obj):
         request = self.context.get('request')
         if request is not None:
-            return request.build_absolute_uri(reverse('group-detail', kwargs={'pk': obj.pk}))
+            return request.build_absolute_uri(reverse('group-detail', kwargs={'slug': obj.slug}))
         return None
 
 
@@ -130,7 +130,7 @@ class CategorySerializer(serializers.ModelSerializer):
     def get_detail_url(self, obj):
         request = self.context.get('request')
         if request is not None:
-            return request.build_absolute_uri(reverse('category-detail', kwargs={'pk': obj.pk}))
+            return request.build_absolute_uri(reverse('category-detail', kwargs={'slug': obj.slug}))
         return None
 
 
@@ -142,18 +142,18 @@ class CategoryDetailSerializer(serializers.ModelSerializer):
         fields = ["id", "title", "groups"]
 
 
-class RegisterSerializer(serializers.ModelSerializer):
-    password = serializers.CharField(write_only=True)
-    email = serializers.EmailField(required=False, allow_blank=True)
-
-    class Meta:
-        model = User
-        fields = ['id', 'username', 'email', 'password']
-
-    def create(self, validated_data):
-        user = User.objects.create_user(
-            username=validated_data['username'],
-            email=validated_data.get('email', ''),
-            password=validated_data['password']
-        )
-        return user
+# class RegisterSerializer(serializers.ModelSerializer):
+#     password = serializers.CharField(write_only=True)
+#     email = serializers.EmailField(required=False, allow_blank=True)
+#
+#     class Meta:
+#         model = User
+#         fields = ['id', 'username', 'email', 'password']
+#
+#     def create(self, validated_data):
+#         user = User.objects.create_user(
+#             username=validated_data['username'],
+#             email=validated_data.get('email', ''),
+#             password=validated_data['password']
+#         )
+#         return user
